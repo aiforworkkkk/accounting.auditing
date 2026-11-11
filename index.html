@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>會計師事務所會審人員 AI 提示詞工作助手</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- 頂部導航欄 -->
+    <header class="bg-slate-900 text-white shadow-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-inner">
+                    <i class="fa-solid fa-calculator text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">會計師事務所會審人員 AI 提示詞工作助手</h1>
+                    <p class="text-xs text-indigo-300">定位：具 2 年經驗中階會審人員 ⇄ 資深會計師/審計主管/稅務專家</p>
+                </div>
+            </div>
+            <!-- 狀態與快速數據指標 -->
+            <div class="flex items-center gap-3">
+                <div class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-database text-indigo-400"></i>
+                    <span>核心提示模組: <strong id="totalPromptsCount" class="text-white">0</strong></span>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                    <span>連動選取項目: <strong id="selectedCount" class="text-white">0</strong></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主體內容區 -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- 左側：篩選、搜尋與提示詞清單 (7格) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            <!-- 搜尋與類別篩選卡片 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                    <i class="fa-solid fa-filter mr-1.5 text-indigo-600"></i> 會審工作模組與情境檢索
+                </h2>
+                <div class="space-y-3">
+                    <!-- 關鍵字搜尋 -->
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-search"></i>
+                        </span>
+                        <input type="text" id="searchInput" placeholder="輸入關鍵字搜尋（例：營業稅、營所稅、底稿、扣繳、財報結算）..." 
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                    </div>
+                    <!-- 類別按鈕列 -->
+                    <div id="categoryFilters" class="flex flex-wrap gap-2 pt-1">
+                        <!-- 動態生成分類標籤 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提示詞清單 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                        <i class="fa-solid fa-list-check mr-1.5 text-indigo-600"></i> 事務所日常業務與查核提示詞清單
+                    </h2>
+                    <span id="resultCount" class="text-xs font-medium bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full">
+                        顯示 0 筆資料
+                    </span>
+                </div>
+
+                <!-- 清單容器 -->
+                <div id="promptListContainer" class="space-y-3 overflow-y-auto max-h-[520px] pr-1">
+                    <!-- 動態載入項目 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 右側：即時連動預覽與 AI 模擬互動 (5格) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            <!-- 連動預覽與參數調整卡片 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                        <i class="fa-solid fa-sliders mr-1.5 text-indigo-600"></i> 專業分析設定與參數連動
+                    </h2>
+                    <button onclick="resetSelection()" class="text-xs text-slate-400 hover:text-indigo-600 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-right"></i> 清空
+                    </button>
+                </div>
+
+                <!-- 目前選中狀態顯示 -->
+                <div id="activePromptDisplay" class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 mb-4">
+                    <div class="text-xs font-medium text-indigo-600 mb-1">目前點選的業務模組</div>
+                    <div id="activeTitle" class="text-base font-bold text-slate-800">尚未選取任何項目</div>
+                    <div id="activeCategory" class="inline-block mt-2 px-2 py-0.5 bg-indigo-200 text-indigo-800 text-xs rounded-md font-medium">請從左側點選</div>
+                </div>
+
+                <!-- 互動參數數值調整 (連動區塊) -->
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs font-medium text-slate-600 mb-1">
+                            <span>查核與覆核嚴格度 (審計/稅務風險掌握)</span>
+                            <span id="strictnessVal" class="font-bold text-indigo-600">90%</span>
+                        </div>
+                        <input type="range" id="strictnessRange" min="60" max="100" value="90" 
+                            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                            oninput="updateLinkedValues()">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-medium text-slate-600 mb-1">
+                            <span>標準架構詳盡度</span>
+                            <span id="detailVal" class="font-bold text-indigo-600">七大架構完整解析</span>
+                        </div>
+                        <select id="detailSelect" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="updateLinkedValues()">
+                            <option value="精簡重點摘要與分錄">精簡重點摘要與分錄</option>
+                            <option value="七大架構完整解析" selected>遵循七大架構（含法規依據、風險與主管覆核）</option>
+                            <option value="查核底稿編製與跨期調整" selected>查核底稿編製與跨期調整專案</option>
+                        </select>
+                    </div>
+
+                    <!-- 事務所會務實際案例輸入區 -->
+                    <div>
+                        <div class="flex justify-between text-xs font-medium text-slate-600 mb-1">
+                            <span>客戶實際帳務與交易情境 / 疑義素材</span>
+                            <span class="text-indigo-600 text-[10px]">自動套用 7 大守則與去識別化提醒</span>
+                        </div>
+                        <textarea id="rawInputBox" rows="3" 
+                            class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                            placeholder="請在此輸入客戶帳務問題、憑證疑義或申報狀況（注意：請先將客戶統編/個資去識別化）..."
+                            oninput="updateLinkedValues()">客戶甲公司（買賣業）本期期末盤點發現存貨盤虧 30 萬元，已取得相關主管核准文件，請問在會計帳務處理及營所稅結算申報上應如何調整與列報？</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI 模擬生成與預覽輸出卡片 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex-1 flex flex-col">
+                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-indigo-600"></i> AI 事務所專家 Prompt 總成預覽
+                </h2>
+
+                <div class="relative flex-1 flex flex-col">
+                    <textarea id="outputPromptBox" readonly rows="8"
+                        class="w-full flex-1 p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl border border-slate-700 resize-none focus:outline-none"
+                        placeholder="選取左側模組後，此處將自動組合連動後的完整 AI 提示詞內容..."></textarea>
+                    
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="copyPromptText()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-copy"></i> 複製完整提示詞
+                        </button>
+                        <button onclick="simulateAIGeneration()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-play"></i> 模擬專家回答
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 訊息提示彈窗 (取代 alert) -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage" class="text-sm">操作成功</span>
+    </div>
+
+    <!-- JavaScript 邏輯與資料庫 -->
+    <script>
+        // 事務所會審人員專屬提示詞資料庫
+        const promptDatabase = [
+            {
+                id: 1,
+                category: "營所稅與結算",
+                title: "營利事業所得稅結算及財稅差異調整",
+                target: "處理企業會計與稅務所得之差異（如限額費用、折舊超限、交際費、職福金等）。",
+                prompt: "【身分與角色】你是具備台灣會計師事務所實務經驗的資深會計師與稅務專家。你的回答對象是具有2年經驗、能獨立承辦一般案件的中階會審人員。\n\n【任務情境】請協助分析以下營所稅結算申報與財稅差異項目。嚴格度指標：{strictness}，報告架構：{detail}。\n\n【個案素材】：\n{rawInput}\n\n【必須遵守的標準架構】\n【一、問題判斷】\n【二、法規及專業依據】（須列出所得稅法、營所稅查核準則及有效年度）\n【三、正確處理方式】\n【四、實際操作】（分錄、計算公式或申報調整數）\n【五、風險及錯誤提醒】\n【六、主管覆核重點】\n【七、結論】",
+                tags: ["營所稅", "查核準則", "財稅差異"]
+            },
+            {
+                id: 2,
+                category: "營業稅與申報",
+                title: "營業稅申報疑義與進項稅額扣抵審查",
+                target: "審查二聯式/三聯式統一發票、海關代徵營業稅額繳納證及進項憑證不得扣抵情形。",
+                prompt: "【身分與角色】你是資深會計師事務所稅務專家與查核主管，協助中階會審人員進行營業稅合規審查。嚴格度：{strictness}，架構：{detail}。\n\n【個案素材】：\n{rawInput}\n\n【七大架構要求】\n請依序提供：【一、問題判斷】、【二、法規及專業依據（營業稅法第15、19條等）】、【三、正確處理方式】、【四、實際操作與申報步驟】、【五、風險及錯誤提醒（如補稅加計利息罰則）】、【六、主管覆核重點】、【七、結論】。",
+                tags: ["營業稅", "進項憑證", "401/403申報"]
+            },
+            {
+                id: 3,
+                category: "帳務與傳票",
+                title: "會計帳務處理、權責發生制與跨期調整",
+                target: "針對複雜交易、預收預付、應收應付及商業會計法規範之會計科目適當性登錄。",
+                prompt: "【身分與角色】你是資深會計師事務所會計主管，協助中階會審人員確認交易經濟實質與借貸分錄。嚴格度：{strictness}，架構：{detail}。\n\n【個案素材】：\n{rawInput}\n\n【七大架構要求】\n請依序提供：【一、問題判斷】、【二、會計準則及商會法依據】、【三、正確處理方式】、【四、實際操作（標準會計分錄）】、【五、風險及錯誤提醒】、【六、主管覆核重點】、【七、結論】。",
+                tags: ["商業會計法", "分錄", "權責發生制"]
+            },
+            {
+                id: 4,
+                category: "審計與工作底稿",
+                title: "審計查核程序、風險辨識與工作底稿編製",
+                target: "執行實質性測試、重大不實表達風險辨識並確保工作底稿足以支持查核結論。",
+                prompt: "【身分與角色】你是具備嚴謹標準的審計公費查核主管，指導中階會審人員編製高品質工作底稿。嚴格度：{strictness}，架構：{detail}。\n\n【個案素材】：\n{rawInput}\n\n【七大架構要求】\n請依序提供：【一、問題判斷】、【二、審計準則公報依據】、【三、正確查核程序】、【四、實際底稿編製邏輯】、【五、重大不實表達風險】、【六、主管覆核重點】、【七、結論】。",
+                tags: ["審計準則", "工作底稿", "實質性測試"]
+            },
+            {
+                id: 5,
+                category: "薪資與勞健保",
+                title: "薪資計算、扣繳申報與勞健保投保級距合規",
+                target: "處理各類所得扣繳、二代健保補充保費、勞保投保薪資分級表及健保投保金額。",
+                prompt: "【身分與角色】你是事務所人事薪資專員與稅務顧問，協助核算扣繳與勞健保。嚴格度：{strictness}，架構：{detail}。\n\n【個案素材】：\n{rawInput}\n\n【七大架構要求】\n請依序提供：【一、問題判斷】、【二、勞基法、勞保條例及所得稅法扣繳辦法】、【三、正確處理方式】、【四、實際操作與計算公式】、【五、短報/漏報罰則風險】、【六、主管覆核重點】、【七、結論】。",
+                tags: ["扣繳申報", "二代健保", "勞健保"]
+            }
+        ];
+
+        let selectedPrompt = null;
+        let activeCategory = "全部";
+
+        // 初始化頁面
+        window.onload = function() {
+            renderCategories();
+            renderPromptList();
+            updateStats();
+            // 預設選取第 1 筆（營所稅與結算）
+            selectPrompt(1);
+        };
+
+        // 渲染分類按鈕
+        function renderCategories() {
+            const categories = ["全部", ...new Set(promptDatabase.map(item => item.category))];
+            const container = document.getElementById('categoryFilters');
+            container.innerHTML = categories.map(cat => `
+                <button onclick="filterByCategory('${cat}')" 
+                    class="px-3 py-1.5 rounded-xl text-xs font-medium transition ${activeCategory === cat ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        // 分類篩選
+        function filterByCategory(category) {
+            activeCategory = category;
+            renderCategories();
+            renderPromptList();
+        }
+
+        // 搜尋輸入監聽
+        document.getElementById('searchInput').addEventListener('input', () => {
+            renderPromptList();
+        });
+
+        // 渲染提示詞清單
+        function renderPromptList() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const container = document.getElementById('promptListContainer');
+
+            const filtered = promptDatabase.filter(item => {
+                const matchCategory = activeCategory === "全部" || item.category === activeCategory;
+                const matchKeyword = item.title.toLowerCase().includes(keyword) || 
+                                     item.target.toLowerCase().includes(keyword) || 
+                                     item.tags.some(t => t.toLowerCase().includes(keyword));
+                return matchCategory && matchKeyword;
+            });
+
+            document.getElementById('resultCount').innerText = `顯示 ${filtered.length} 筆資料`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-slate-400 text-sm">
+                        <i class="fa-solid fa-folder-open text-2xl mb-2"></i>
+                        <p>找不到符合條件的事務所業務模組</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => `
+                <div onclick="selectPrompt(${item.id})" 
+                    class="p-4 rounded-xl border transition cursor-pointer ${selectedPrompt && selectedPrompt.id === item.id ? 'border-indigo-600 bg-indigo-50/40 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50/50'}">
+                    <div class="flex justify-between items-start mb-1.5">
+                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-md">${item.category}</span>
+                        <div class="flex gap-1">
+                            ${item.tags.map(t => `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded">#${t}</span>`).join('')}
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-sm mb-1">${item.title}</h3>
+                    <p class="text-xs text-slate-500 line-clamp-2">${item.target}</p>
+                </div>
+            `).join('');
+        }
+
+        // 選取特定提示詞
+        function selectPrompt(id) {
+            selectedPrompt = promptDatabase.find(item => item.id === id);
+            document.getElementById('selectedCount').innerText = selectedPrompt ? "1" : "0";
+            
+            if (selectedPrompt) {
+                document.getElementById('activeTitle').innerText = selectedPrompt.title;
+                document.getElementById('activeCategory').innerText = selectedPrompt.category;
+            }
+            
+            renderPromptList();
+            updateLinkedValues();
+        }
+
+        // 清空選取
+        function resetSelection() {
+            selectedPrompt = null;
+            document.getElementById('selectedCount').innerText = "0";
+            document.getElementById('activeTitle').innerText = "尚未選取任何項目";
+            document.getElementById('activeCategory').innerText = "請從左側點選";
+            document.getElementById('outputPromptBox').value = "";
+            renderPromptList();
+        }
+
+        // 更新連動數值與提示詞輸出
+        function updateLinkedValues() {
+            const strictness = document.getElementById('strictnessRange').value;
+            document.getElementById('strictnessVal').innerText = strictness + '%';
+
+            const detail = document.getElementById('detailSelect').value;
+            document.getElementById('detailVal').innerText = detail;
+
+            const rawInput = document.getElementById('rawInputBox').value;
+
+            if (!selectedPrompt) {
+                document.getElementById('outputPromptBox').value = "請先從左側列表點選一項事務所業務模組...";
+                return;
+            }
+
+            // 替換提示詞模板中的變數
+            let finalPrompt = selectedPrompt.prompt
+                .replace('{strictness}', strictness + '%')
+                .replace('{detail}', detail)
+                .replace('{rawInput}', rawInput);
+
+            document.getElementById('outputPromptBox').value = finalPrompt;
+        }
+
+        // 更新頂部總數
+        function updateStats() {
+            document.getElementById('totalPromptsCount').innerText = promptDatabase.length;
+        }
+
+        // 複製提示詞
+        function copyPromptText() {
+            const box = document.getElementById('outputPromptBox');
+            if (!selectedPrompt) {
+                showToast("尚未選取提示詞，無法複製！", "error");
+                return;
+            }
+            box.select();
+            document.execCommand('copy');
+            showToast("已成功將事務所專屬提示詞複製至剪貼簿！", "success");
+        }
+
+        // 模擬會審執行
+        function simulateAIGeneration() {
+            if (!selectedPrompt) {
+                showToast("請先選取業務模組！", "error");
+                return;
+            }
+            showToast("AI 資深會計師正在依據台灣法規與 7 大架構分析中...", "success");
+            setTimeout(() => {
+                showToast("專家解答與主管覆核要點已順利產出！", "success");
+            }, 1200);
+        }
+
+        // 顯示自訂 Toast
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = message;
+            if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else {
+                toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
